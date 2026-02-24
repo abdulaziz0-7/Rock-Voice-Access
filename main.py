@@ -5,7 +5,6 @@ import time
 import speech_recognition as sr
 import warnings
 import random
-from transformers import pipeline
 
 # --- Import your action dispatcher ---
 try:
@@ -25,10 +24,9 @@ is_running = True
 # --- 🌊 CUSTOM AUDIO WAVE ANIMATION ---
 class AnimatedWave(ctk.CTkCanvas):
     def __init__(self, master, **kwargs):
-        # We match the background color of the container frame
         super().__init__(master, bg="#000000", highlightthickness=0, **kwargs)
         self.lines = []
-        self.num_lines = 16
+        self.num_lines = 8
         self.width_val = kwargs.get('width', 100)
         self.height_val = kwargs.get('height', 30)
         self.is_animating = False
@@ -46,7 +44,6 @@ class AnimatedWave(ctk.CTkCanvas):
 
     def stop(self):
         self.is_animating = False
-        # Flatten the wave and turn it red when muted
         spacing = self.width_val / self.num_lines
         for i, line in enumerate(self.lines):
             x = i * spacing + (spacing / 2)
@@ -61,7 +58,6 @@ class AnimatedWave(ctk.CTkCanvas):
         for i, line in enumerate(self.lines):
             x = i * spacing + (spacing / 2)
             
-            # Math to make the wave taller in the middle, shorter on the edges
             distance_from_center = abs((self.num_lines / 2) - i)
             max_h = (self.height_val / 2) - (distance_from_center * 0.8)
             max_h = max(2, max_h) 
@@ -71,16 +67,15 @@ class AnimatedWave(ctk.CTkCanvas):
             self.coords(line, x, self.height_val/2 - h, x, self.height_val/2 + h)
             self.itemconfig(line, fill="#00e5ff")
 
-        # Re-run the animation every 80 milliseconds
         self.after(80, self.animate)
 
 # --- THE MAIN UI CLASS ---
-class RockUIPill(ctk.CTk):
+class SpiderUIPill(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         # --- 1. Window Setup ---
-        self.title("Rock AI")
+        self.title("Spider AI")
         pill_width = 460  
         pill_height = 64
         screen_width = self.winfo_screenwidth()
@@ -105,12 +100,9 @@ class RockUIPill(ctk.CTk):
         )
         self.container.pack(fill="both", expand=True, padx=0, pady=0)
 
-        # --- 3. UI Elements (Left to Right) ---
-        
-        # A. Large Mute/Unmute Toggle Button
-        # Wrapped in a frame to force it to stay perfectly circular
+        # --- 3. UI Elements ---
         self.btn_frame = ctk.CTkFrame(self.container, fg_color="transparent", width=48, height=48)
-        self.btn_frame.pack_propagate(False) # Prevents the button from stretching the frame
+        self.btn_frame.pack_propagate(False) 
         self.btn_frame.pack(side="left", padx=(12, 10), pady=8)
 
         self.mute_btn = ctk.CTkButton(
@@ -121,19 +113,16 @@ class RockUIPill(ctk.CTk):
         )
         self.mute_btn.pack(expand=True, fill="both")
 
-        # B. Status Text
         self.status_label = ctk.CTkLabel(
             self.container, text="🎙️ Listening...",
             font=("Segoe UI Display", 16, "bold"), text_color="#00e5ff"
         )
         self.status_label.pack(side="left", padx=(0, 15))
 
-        # C. The New Animated Audio Wave
         self.audio_wave = AnimatedWave(self.container, width=100, height=30)
         self.audio_wave.pack(side="left", padx=10)
         self.audio_wave.start()
 
-        # D. Right Controls (Minimize & Close)
         self.controls_frame = ctk.CTkFrame(self.container, fg_color="transparent")
         self.controls_frame.pack(side="right", padx=(0, 12))
 
@@ -209,60 +198,70 @@ class RockUIPill(ctk.CTk):
 
     def ai_listener_loop(self):
         global is_running
-        self.update_status("⚙️ Booting Engine...", "#f6ad55") 
+        self.update_status("⚙️ Connecting to Cloud...", "#f6ad55") 
         
-        try:
-            transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-tiny.en")
-        except Exception as e:
-             self.update_status("⚠️ AI Error!", "#e53e3e")
-             return
-
         recognizer = sr.Recognizer()
+        recognizer.pause_threshold = 1.0  
+        recognizer.non_speaking_duration = 0.5 
+        
+        # --- THE GHOST NOISE FIX ---
+        # Turn off auto-sensitivity so it doesn't adapt to the hum of your PC fan
+        recognizer.dynamic_energy_threshold = False 
+        
         microphone = sr.Microphone()
         
         with microphone as source:
-            recognizer.adjust_for_ambient_noise(source, duration=1)
-            recognizer.energy_threshold += 50
+            self.update_status("🎧 Calibrating Mic...", "#f6ad55")
+            recognizer.adjust_for_ambient_noise(source, duration=2)
+            
+            # Force a strict minimum volume limit. 
+            # Normal speech is usually around 400-600. Background static is usually 50-100.
+            if recognizer.energy_threshold < 500:
+                recognizer.energy_threshold = 500
+            else:
+                # If you are in a really loud room, bump it up even higher
+                recognizer.energy_threshold += 200 
         
-        temp_file = "temp_audio.wav"
-        self.update_status("🎙️ Listening...", "#00e5ff")
+        self.update_status("🎙️ Online & Ready...", "#00e5ff")
 
         while is_running:
             if self.is_muted:
                 time.sleep(1)
                 continue
 
+            self.update_status("🎙️ Listening...", "#00e5ff")
+
             try:
                 with microphone as source:
-                    audio = recognizer.listen(source, timeout=3, phrase_time_limit=5)
+                    # --- LONGER LISTENING WINDOW ---
+                    # timeout=4: Waits up to 4 seconds for you to start speaking
+                    # phrase_time_limit=10: Allows you to speak for up to 10 seconds straight
+                    audio = recognizer.listen(source, timeout=4, phrase_time_limit=10)
                 
-                self.update_status("🧠 Thinking...", "#f6ad55") 
+                self.update_status("⚡ Processing...", "#f6ad55") 
                 
-                with open(temp_file, "wb") as f:
-                    f.write(audio.get_wav_data())
-                
-                result = transcriber(temp_file)
-                text = result['text'].strip().lower()
-                
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+                raw_text = recognizer.recognize_google(audio).lower()
+                clean_text = raw_text.replace(",", "").replace(".", "").replace("!", "").replace("?", "").strip()
 
-                if text:
-                    print(f"🗣️ Heard: {text}")
-                    execute_command(text)
-                    
-                self.update_status("🎙️ Listening...", "#00e5ff")
+                if clean_text:
+                    self.update_status(f"🚀 Executing...", "#4ade80") 
+                    print(f"✅ Heard: '{clean_text}' -> Sending to dispatcher")
+                    execute_command(clean_text)
 
+            # --- 🐛 DEBUGGING BLOCKS ---
             except sr.WaitTimeoutError:
-                pass 
+                print("⏳ Debug: Timeout (Waited 4 seconds, didn't hear you start speaking)") 
             except sr.UnknownValueError:
-                pass 
+                print("🤔 Debug: Heard noise, but couldn't understand the words") 
+            except sr.RequestError as e:
+                print(f"Network Error: {e}")
+                self.update_status("⚠️ No Internet!", "#e53e3e")
+                time.sleep(2)
             except Exception as e:
                 print(f"Error: {e}")
                 time.sleep(1)
-                self.update_status("🎙️ Listening...", "#00e5ff")
 
 if __name__ == "__main__":
-    app = RockUIPill()
+    app = SpiderUIPill()
     ctk.deactivate_automatic_dpi_awareness() 
     app.mainloop()

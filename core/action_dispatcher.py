@@ -7,44 +7,41 @@ import screen_brightness_control as sbc
 import re
 import pyttsx3
 import threading
-
-# ❌ REMOVE the global engine = pyttsx3.init() from here!
+import webbrowser
 
 def speak(text):
-    """Makes Rock speak the text safely without crashing the background thread."""
-    print(f"🔊 Rock says: {text}")
+    """Makes Spider speak the text safely without crashing the background thread."""
+    print(f"🔊 Spider says: {text}")
     
     def _speak_task():
         import pythoncom
-        # 🔓 1. Unlock Windows COM for this specific mini-thread
         pythoncom.CoInitialize() 
         try:
-            # 2. Initialize the engine locally so it doesn't cross threads
             engine = pyttsx3.init()
             engine.setProperty('rate', 170)
-            
-            # (Optional) Set to male or female voice
             voices = engine.getProperty('voices')
             engine.setProperty('voice', voices[0].id) 
-            
-            # 3. Speak
             engine.say(text)
             engine.runAndWait()
         finally:
-            # 🔒 4. Clean up and lock COM so memory doesn't leak
             pythoncom.CoUninitialize()
 
-    # Launch the protected speech in a disposable thread
     t = threading.Thread(target=_speak_task, daemon=True)
     t.start()
-    
-    # CRITICAL: Wait for Rock to finish speaking so his mic doesn't hear his own voice!
     t.join()
 
-# --- THE O(1) ACTION DISPATCHER (MASTER EDITION) ---
+# --- DYNAMIC SEARCH URLS ---
+SEARCH_ENGINES = {
+    "youtube": "https://www.youtube.com/results?search_query={}",
+    "amazon": "https://www.amazon.in/s?k={}",
+    "wikipedia": "https://en.wikipedia.org/wiki/{}",
+    "github": "https://github.com/search?q={}",
+    "google": "https://www.google.com/search?q={}" 
+}
+
+# --- THE O(1) ACTION DISPATCHER ---
 COMMANDS = {
-    # === 🟢 OPEN COMMANDS ===
-    # Notice how os.system fires FIRST, and speak() fires SECOND.
+    # === 🌐 BROWSER & APPS ===
     "open google chrome": lambda: (os.system("start chrome"), speak("Opening Google Chrome...")),
     "launch google chrome": lambda: (os.system("start chrome"), speak("Launching Google Chrome...")),
     "open brave": lambda: (os.system("start brave"), speak("Opening Brave...")),
@@ -110,38 +107,46 @@ COMMANDS = {
 
     # === 💻 SYSTEM COMMANDS ===
     "lock pc": lambda: (os.system("rundll32.exe user32.dll,LockWorkStation"), speak("Locking PC...")),
-    # Power Controls
     "shutdown pc": lambda: (os.system("shutdown /s /t 5"), speak("SHUTTING DOWN PC in 5 seconds! Say 'cancel shutdown' to abort!")),
     "turn off computer": lambda: (os.system("shutdown /s /t 5"), speak("SHUTTING DOWN PC in 5 seconds! Say 'cancel shutdown' to abort!")),
     "cancel shutdown": lambda: (os.system("shutdown /a"), speak("Shutdown Aborted!")),
     "restart pc": lambda: (os.system("shutdown /r /t 5"), speak("Restarting PC...")),
     
-    # Desktop Navigation
     "show desktop": lambda: (pyautogui.hotkey('win', 'd'), speak("Minimizing all windows...")),
     "minimize window": lambda: (pyautogui.hotkey('win', 'd'), speak("Minimizing all windows...")),
     "take screenshot": lambda: (pyautogui.screenshot(rf"C:\aziz\screenshots\{int(time.time())}.png"), speak("Saving to external folder...")),
     
-    # Hardware/Media Controls
     "volume up": lambda: (pyautogui.press(['volumeup', 'volumeup', 'volumeup', 'volumeup', 'volumeup']), speak("Increasing Volume...")),
     "volume down": lambda: (pyautogui.press(['volumedown', 'volumedown', 'volumedown', 'volumedown', 'volumedown']), speak("Decreasing Volume...")),
     "mute audio": lambda: (pyautogui.press('volumemute'), speak("Toggling Mute...")),
     "play media": lambda: (pyautogui.press('playpause'), speak("Play/Pause Media...")),
     "pause media": lambda: (pyautogui.press('playpause'), speak("Play/Pause Media...")),
     "next track": lambda: (pyautogui.press('nexttrack'), speak("Skipping to next song...")),
-    "increase brightness ": lambda: (sbc.set_brightness('+25'), speak("Increasing Brightness...")),
+    "increase brightness": lambda: (sbc.set_brightness('+25'), speak("Increasing Brightness...")),
     "decrease brightness": lambda: (sbc.set_brightness('-25'), speak("Decreasing Brightness...")),
-    
-    # Advanced OS Control
-    "empty recycle bin": lambda: (os.system('powershell.exe -NoProfile -Command "Clear-RecycleBin -Force"'), speak("Emptying Trash..."))
+    "empty recycle bin": lambda: (os.system('powershell.exe -NoProfile -Command "Clear-RecycleBin -Force"'), speak("Emptying Trash...")),
+
+    # === ⌨️ TYPING & NAVIGATION (NEW) ===
+    # Notice we don't use speak() here so it doesn't interrupt your dictation flow
+    "enter": lambda: (pyautogui.press('enter'), print("⌨️ Action: Pressed Enter")),
+    "press enter": lambda: (pyautogui.press('enter'), print("⌨️ Action: Pressed Enter")),
+    "scroll up": lambda: (pyautogui.scroll(800), print("🖱️ Action: Scrolled Up")),
+    "scroll down": lambda: (pyautogui.scroll(-800), print("🖱️ Action: Scrolled Down")),
 }
 
+# --- 6. AUTO-TYPING DICTATION FALLBACK ---
+def handle_unknown_command(spoken_text):
+    """If the text is not a command, just type it out naturally."""
+    print(f"⌨️ Dictating: '{spoken_text}'...")
+    # We add a space at the end so you can dictate continuously without words sticking together
+    pyautogui.write(spoken_text + " ", interval=0.01)
+
+
 def execute_command(transcription):
-    # 1. Normalize the text
     clean_text = transcription.lower().translate(str.maketrans('', '', string.punctuation)).strip()
     clean_text = clean_text.replace(" for me", "").replace("please ", "").replace("zero", "0")
     
-    typing_trigger = "enter "
-    # 1. Brightness Interceptor
+    # --- DYNAMIC INTERCEPTORS ---
     if "brightness to" in clean_text:
         numbers = re.findall(r'\d+', clean_text) 
         if numbers:
@@ -149,27 +154,41 @@ def execute_command(transcription):
             sbc.set_brightness(target)
             speak(f"Setting Brightness to {target}%...")
             return
+            
+    # --- 4. DYNAMIC SEARCHING ---
+    elif clean_text.startswith("search "):
+        request = clean_text.replace("search ", "", 1).strip()
+        
+        if "whatsapp" in request:
+            speak("Opening WhatsApp Web...")
+            webbrowser.open("https://web.whatsapp.com/")
+            return
 
-    elif clean_text.startswith(typing_trigger):
-        lower_original = transcription.lower()
-        start_index = lower_original.find(typing_trigger) + len(typing_trigger)
+        engine = "google"
+        query = request
         
-        payload = transcription[start_index:].strip()
+        for key in SEARCH_ENGINES.keys():
+            if request.startswith(f"{key} for "):
+                engine = key
+                query = request.replace(f"{key} for ", "", 1).strip()
+                break
         
-        if payload.endswith('.'):
-            payload = payload[:-1]
-            
-        print(f"⌨️ Action: Typing '{payload}'...")
-        pyautogui.write(payload, interval=0.02)
-        speak("Typing complete.")
-        return    
-            
-    
-    
-    # 2. Mathematical Fuzzy Matching (Levenshtein Distance)
-    matches = difflib.get_close_matches(clean_text, COMMANDS.keys(), n=1, cutoff=0.75)
+        if query.startswith("for "):
+            query = query.replace("for ", "", 1).strip()
+
+        if query:
+            speak(f"Searching {engine.capitalize()} for {query}...")
+            formatted_url = SEARCH_ENGINES[engine].format(query.replace(" ", "+"))
+            webbrowser.open(formatted_url)
+        else:
+            speak("What do you want me to search for?")
+        return
+        
+    # --- STATIC COMMAND MATCHING ---
+    # INCREASED STRICTNESS (0.85) so dictation doesn't accidentally trigger commands!
+    matches = difflib.get_close_matches(clean_text, COMMANDS.keys(), n=1, cutoff=0.85)
     best_match = (matches + ["unknown"])[0]
     
-    # 3. O(1) Execution with Fallback Print
-    action = COMMANDS.get(best_match, lambda: print(f"💤 (No valid command match for: '{clean_text}')"))
+    # Execute command, or type the raw text out!
+    action = COMMANDS.get(best_match, lambda: handle_unknown_command(transcription))
     action()

@@ -173,6 +173,7 @@ class SpiderUIPill(ctk.CTk):
         self.container.bind("<ButtonPress-1>", self.start_move)
         self.container.bind("<ButtonRelease-1>", self.stop_move)
         self.container.bind("<B1-Motion>", self.on_move)
+        self.bind("<Map>", self.restore_window)
         self.x_drag_start = None
         self.y_drag_start = None
 
@@ -194,13 +195,19 @@ class SpiderUIPill(ctk.CTk):
             self.audio_wave.start() # Restarts the wave animation
 
     def minimize_app(self):
-        """Temporarily gives the window borders back so Windows can minimize it."""
-        self.overrideredirect(False)
-        self.iconify()
+        """Force Windows to recognize the app before sending it to the taskbar."""
+        self.is_minimized = True
+        self.withdraw()               # 1. Instantly hide the floating pill
+        self.overrideredirect(False)  # 2. Tell Windows it is a normal app again
+        self.iconify()                # 3. Send it to the taskbar!
 
-    def restore_app(self, event):
-        """When the user clicks the taskbar to restore it, hide the borders again."""
-        self.overrideredirect(True)
+    def restore_window(self, event):
+        """When clicking the taskbar icon, strip the borders and reveal the pill."""
+        if getattr(self, "is_minimized", False) and event.widget is self:
+            self.withdraw()               # 1. Hide the ugly Windows borders 
+            self.overrideredirect(True)   # 2. Turn back into a borderless pill
+            self.is_minimized = False     # 3. Reset our flag
+            self.deiconify()              # 4. Reveal the app on screen!
 
     def close_app(self):
         """Safely shuts down the app and kills the background thread."""

@@ -166,7 +166,7 @@ class SpiderUIPill(ctk.CTk):
             font=("Arial", 14, "bold"), command=self.close_app
         )
         self.close_btn.pack(side="left", padx=4)
-
+    
         # --- 4. Draggable Window Logic ---
         # Because we removed the Windows title bar, we have to code our own way to drag the window.
         # We bind left-click (<ButtonPress-1>) and mouse movement (<B1-Motion>) to custom functions.

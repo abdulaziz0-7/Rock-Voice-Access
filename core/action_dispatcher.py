@@ -88,6 +88,11 @@ COMMANDS = {
     "launch whatsapp": lambda: (os.system("start whatsapp:"), speak("Opening WhatsApp...")),
     "open microsoft store": lambda: (os.system("start ms-windows-store:"), speak("Opening Microsoft Store...")),
     "launch microsoft store": lambda: (os.system("start ms-windows-store:"), speak("Opening Microsoft Store...")),
+    "open notepad": lambda: (os.system("start notepad"), speak("Opening Notepad...")),
+    "launch notepad": lambda: (os.system("start notepad"), speak("Opening Notepad...")),
+    "open vs code": lambda: (os.system("code"), speak("Opening Visual Studio Code...")),
+    "launch vs code": lambda: (os.system("code"), speak("Opening Visual Studio Code...")),
+    "open visual studio code": lambda: (os.system("code"), speak("Opening Visual Studio Code...")),
 
     # === 🛑 CLOSE COMMANDS ===
     # 'taskkill /im [process_name] /f' forcefully closes the background process
@@ -123,6 +128,10 @@ COMMANDS = {
     "exit whatsapp": lambda: (os.system('powershell -command "Get-Process *whatsapp* -ErrorAction SilentlyContinue | Stop-Process -Force"'), speak("Closing WhatsApp...")),
     "close microsoft store": lambda: (os.system("taskkill /im WinStore.App.exe /f"), speak("Closing Microsoft Store...")),
     "exit microsoft store": lambda: (os.system("taskkill /im WinStore.App.exe /f"), speak("Closing Microsoft Store...")),
+    "close notepad": lambda: (os.system("taskkill /im notepad.exe /f"), speak("Closing Notepad...")),
+    "exit notepad": lambda: (os.system("taskkill /im notepad.exe /f"), speak("Closing Notepad...")),
+    "close vs code": lambda: (os.system("taskkill /im Code.exe /f"), speak("Closing Visual Studio Code...")),
+    "exit vs code": lambda: (os.system("taskkill /im Code.exe /f"), speak("Closing Visual Studio Code...")),
 
     # === 💻 SYSTEM COMMANDS ===
     "lock pc": lambda: (os.system("rundll32.exe user32.dll,LockWorkStation"), speak("Locking PC...")),

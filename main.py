@@ -194,8 +194,13 @@ class SpiderUIPill(ctk.CTk):
             self.audio_wave.start() # Restarts the wave animation
 
     def minimize_app(self):
-        """Hides the app down into the Windows taskbar."""
+        """Temporarily gives the window borders back so Windows can minimize it."""
+        self.overrideredirect(False)
         self.iconify()
+
+    def restore_app(self, event):
+        """When the user clicks the taskbar to restore it, hide the borders again."""
+        self.overrideredirect(True)
 
     def close_app(self):
         """Safely shuts down the app and kills the background thread."""

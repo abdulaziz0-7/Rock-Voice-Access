@@ -31,5 +31,5 @@ rock AI is a continuous-listening, multi-threaded Windows voice assistant and un
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/yourusername/rock-ai.git](https://github.com/yourusername/rock-ai.git)
+   git clone [https://github.com/abdulaziz0-7/Rock-Voice-Access.git](https://github.com/abdulaziz0-7/Rock-Voice-Access.git)
    cd rock-ai

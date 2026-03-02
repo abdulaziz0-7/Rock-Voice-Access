@@ -166,7 +166,7 @@ class SpiderUIPill(ctk.CTk):
             font=("Arial", 14, "bold"), command=self.close_app
         )
         self.close_btn.pack(side="left", padx=4)
-    
+
         # --- 4. Draggable Window Logic ---
         # Because we removed the Windows title bar, we have to code our own way to drag the window.
         # We bind left-click (<ButtonPress-1>) and mouse movement (<B1-Motion>) to custom functions.
@@ -280,11 +280,11 @@ class SpiderUIPill(ctk.CTk):
             # Force a strict minimum volume limit (Audio Gating).
             # Normal speech is around 400-600. Background static is usually 50-100.
             # This ensures Spider only wakes up for loud, intentional speech.
-            if recognizer.energy_threshold < 500:
-                recognizer.energy_threshold = 500
+            if recognizer.energy_threshold < 250:
+                recognizer.energy_threshold = 250
             else:
                 # If the room is already loud, bump the threshold up even higher
-                recognizer.energy_threshold += 200 
+                recognizer.energy_threshold += 100 
         
         self.update_status("🎙️ Online & Ready...", "#00e5ff")
 

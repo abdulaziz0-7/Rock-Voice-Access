@@ -5,17 +5,17 @@ import pyautogui      # Automates keyboard and mouse presses for dictation and s
 import time           # Used for naming screenshot files based on the current timestamp
 import screen_brightness_control as sbc # Specialized library to control monitor hardware
 import re             # Regular Expressions (Regex) used to extract numbers from spoken text
-import pyttsx3        # Offline Text-to-Speech engine so Spider can talk without internet
-import threading      # Allows Spider to speak without freezing the rest of the application
+import pyttsx3        # Offline Text-to-Speech engine so Rock can talk without internet
+import threading      # Allows Rock to speak without freezing the rest of the application
 import webbrowser     # Used to open URLs in the user's default browser
 
 def speak(text):
     """
-    Makes Spider speak the text safely using a background thread.
+    Makes Rock speak the text safely using a background thread.
     If we didn't use threading, the entire application would freeze and stop 
-    listening until Spider finished talking.
+    listening until Rock finished talking.
     """
-    print(f"🔊 Spider says: {text}")
+    print(f"🔊 Rock says: {text}")
     
     def _speak_task():
         import pythoncom
@@ -167,7 +167,7 @@ COMMANDS = {
 # --- 6. SILENT FALLBACK ---
 def handle_unknown_command(spoken_text):
     """
-    If the spoken text is neither a command nor a typing request, Spider simply ignores it.
+    If the spoken text is neither a command nor a typing request, Rock simply ignores it.
     This prevents the AI from acting erratically during normal background conversations.
     """
     print(f"💤 Ignored: '{spoken_text}' (Not a command. Say 'type' to dictate)")

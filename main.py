@@ -85,12 +85,12 @@ class AnimatedWave(ctk.CTkCanvas):
         self.after(80, self.animate)
 
 # --- THE MAIN UI CLASS ---
-class SpiderUIPill(ctk.CTk):
+class RockUIPill(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         # --- 1. Window Setup ---
-        self.title("Spider AI")
+        self.title("Rock AI")
         pill_width = 460  
         pill_height = 64
         
@@ -279,7 +279,7 @@ class SpiderUIPill(ctk.CTk):
             
             # Force a strict minimum volume limit (Audio Gating).
             # Normal speech is around 400-600. Background static is usually 50-100.
-            # This ensures Spider only wakes up for loud, intentional speech.
+            # This ensures Rock only wakes up for loud, intentional speech.
             if recognizer.energy_threshold < 250:
                 recognizer.energy_threshold = 250
             else:
@@ -338,6 +338,6 @@ class SpiderUIPill(ctk.CTk):
 
 # Application Entry Point
 if __name__ == "__main__":
-    app = SpiderUIPill()
+    app = RockUIPill()
     ctk.deactivate_automatic_dpi_awareness() # Fixes blurry text issues on some Windows displays
     app.mainloop() # Starts the CustomTkinter GUI loop

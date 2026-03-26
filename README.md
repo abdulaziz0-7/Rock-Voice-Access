@@ -25,7 +25,7 @@ rock AI is a continuous-listening, multi-threaded Windows voice assistant and un
 * **Speech-to-Text:** SpeechRecognition (Google Web Speech API)
 * **Text-to-Speech:** pyttsx3 (Offline Windows TTS Engine)
 * **Automation:** PyAutoGUI (Keyboard/Mouse simulation)
-* **Hardware Control:** screen-brightness-control
+
 
 ## 🚀 Installation & Setup
 
